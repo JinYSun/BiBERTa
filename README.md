@@ -1,61 +1,59 @@
-# DeepAcceptor
+# **DeepDAP**
 
-### **Computational design and screening of acceptor materials for organic solar cells**
+### **<u>Deep learning-assisted to accelerate the discovery of donor/acceptor pairs for high-performance organic solar cells</u>**
 
-![workflow](workflow.jpg)
+![overview](DeepDAP\overview.jpg)
 
 ## <u>Motivation</u>
 
-It is a time-consuming and costly process to developing affordable and high-performance organic photovoltaic materials. Developing reliable computational methods to predict the power conversion efficiency (PCE) is crucial to triage unpromising molecules in large-scale database and accelerate the material discovery process. In this study, a deep-learning based framework (DeepAcceptor) has been built to design and discover high-efficient small molecule acceptor materials. Specifically, an experimental dataset was built by collecting data from publications. Then, a BERT-based model was used to predict PCEs. The molecular graph was used as the input and the computation molecules and experimental molecules were used to pretrain and finetune the model, respectively. In sum, DeepAcceptor is a promising method to predict the PCE and speed up the discovery of high-performance acceptor materials.
+It is a deep learning-based framework built for new donor/acceptor pairs (DeepDAP) discovery. The framework contains data collection section, PCE prediction section and molecular discovery section. Specifically, a large D/A pair dataset was built by collecting experimental data from literature. Then, a novel RoBERTa-based dual-encoder model (DeRoBERTa) was developed for PCE prediction by using the SMILES of donor and acceptor pairs as the input. Two pretrained ChemBERTa2 encoders were loaded as initial parameters of the dual-encoder. The model was trained, tested and validated on the experimental dataset.
 
 ## <u>Depends</u>
 
 We recommend to use [conda](https://conda.io/docs/user-guide/install/download.html) and [pip](https://pypi.org/project/pip/).
 
-[tensorflow](www.tensorflow.org)==2.3.0, 
+torch==1.10.0+cu113, 
 
-[rdkit](https://rdkit.org/)==2020.03.2, 
+pytorch-lightning==1.9.2, 
 
-[numpy](https://numpy.org/)==1.18.5, 
+transformers==4.12.0,
 
-[pandas](http://pandas.pydata.org/)==1.1.0, 
+numpy==1.20.0, 
 
-[openbabel](http://openbabel.org/wiki/Main_Page)==2.3.1
+pandas==1.4.3, 
 
-**By using the *environment.yml* file, it will install all the required packages.**
+curses=2.2.1+utf8,
 
-git clone https://github.com/jinysun/deepacceptor.git
+scikit-learn==1.1.2,
 
-cd DeepAcceptor
+scipy==1.4.1,
 
-conda env create -f environment.yml
+tqdm==4.66.1,
 
-conda activate deepacceptor
+easydict==1.10
+
+plotly==5.3.1
 
 ## <u>Usage</u>
 
--- pretrain:
-    contains the codes for masked atom prediction pre-training task.
+-- train:
+    contains the codes for training the model.
     
--- regression:
-    contain the code for fune-tuning on specified tasks
+-- predict:
+    contain the code for screening large-scale DAPs.
     
--- dataset:
-    contain the code to building dataset for pre-traing and fine-tuning 
-    
--- utils:
-    contain the code to convert molecules to graphs
-    
- --data:
-     dataset used for pretraining and fine-tuning 
+-- run:
+    contain the code to predict the performance of DAP one by one. 
+
+-- dataset/OSC
+
+​	contain the dataset for training/testing/validating the model.
 
 ## <u>Discussion</u> 
 
-The [Discussion](https://github.com/JinYSun/Deepacceptor/tree/main/discussion) folder contains the scripts for evaluating the PCE prediction performance.  We compared sevaral common methods widely used in molecular property prediction, such as [MolCLR](https://github.com/JinYSun/DeepAcceptor/blob/main/discussion/MolCLR.py) [GNN](https://github.com/JinYSun/DeepAcceptor/blob/main/discussion/GNN.py),[RF](https://github.com/JinYSun/DeepAcceptor/blob/main/discussion/RF.py), [ANN](https://github.com/JinYSun/Deepacceptor/blob/main/discussion/ANN.py),[QDF](https://github.com/JinYSun/DeepAcceptor/blob/main/discussion/QDF.py).
+The ***Discussion*** folder contains the scripts for evaluating the PCE prediction performance.  We compared sevaral methods widely used in molecular property prediction.
 
-## <u>Screen</u>
 
-![screen](screen.jpg)
 
 ## <u>Contact</u>
 
