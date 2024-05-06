@@ -4,16 +4,20 @@ from rdkit import Chem
 import torch
 import pickle
 import pandas as pd
-atom_dict = defaultdict(lambda: len(atom_dict))
-bond_dict = defaultdict(lambda: len(bond_dict))
-fingerprint_dict = defaultdict(lambda: len(fingerprint_dict))
-edge_dict = defaultdict(lambda: len(edge_dict))
+atom_dict1 = defaultdict(lambda: len(atom_dict1))
+bond_dict1 = defaultdict(lambda: len(bond_dict1))
+fingerprint_dict1 = defaultdict(lambda: len(fingerprint_dict1))
+edge_dict1 = defaultdict(lambda: len(edge_dict1))
 radius=1
+bond_dict2 = defaultdict(lambda: len(bond_dict2))
+fingerprint_dict2 = defaultdict(lambda: len(fingerprint_dict2))
+edge_dict2 = defaultdict(lambda: len(edge_dict2))
+atom_dict2 = defaultdict(lambda: len(atom_dict2))
 
 def dump_dictionary(dictionary, filename):
     with open(filename, 'wb') as f:
         pickle.dump(dict(dictionary), f)
-device = torch.device('cpu')        
+device = torch.device('cuda')        
 # if torch.cuda.is_available():
 #     device = torch.device('cuda')
 #     print('The code uses a GPU!')
@@ -86,46 +90,7 @@ def extract_fingerprints(radius, atoms, i_jbond_dict,
             i_jedge_dict = i_jedge_dict_
 
     return np.array(nodes)
-def creat_datasetdev(file_name,m):
-    dir_input = ('\code\compute/dict/pce_pre_train_-')
-    
-    
-
-    """Load a dataset."""
-    data=pd.read_csv(file_name)['SMILES'][m:5000+m]
-    
-    #data_original = [data for data in data_original                        if '.' not in data.split()[0]]    
-    dataset=[]
-    for i in range (len(data)):
-        smiles = data[i]
-        
-        """Create each data with the above defined functions."""
-    
-        mol=Chem.MolFromSmiles(smiles)
-        smiles=Chem.MolToSmiles(mol)
-        mol= Chem.AddHs(Chem.MolFromSmiles(smiles))
-        atoms = create_atoms(mol, atom_dict)
-        molecular_size = len(atoms)
-        i_jbond_dict = create_ijbonddict(mol, bond_dict)
-        fingerprints = extract_fingerprints(radius, atoms, i_jbond_dict,
-                                                fingerprint_dict, edge_dict)
-        adjacency = np.float32((Chem.GetAdjacencyMatrix(mol)))            
-            #Transform the above each data of numpy
-            #to pytorch tensor on a device (i.e., CPU or GPU).
-        fingerprints = torch.LongTensor(fingerprints).to(device)
-        adjacency = torch.FloatTensor(adjacency).to(device)
-            
-    
-        dataset.append((smiles,fingerprints, adjacency, molecular_size))
-     
-        
-        
-    dir_dataset='\code\compute/dict/pce_pre_train_'
-    dump_dictionary(fingerprint_dict, dir_dataset + '-fingerprint_dict.pickle')
-    dump_dictionary(atom_dict, dir_dataset + '-atom_dict.pickle')
-    dump_dictionary(bond_dict, dir_dataset + '-bond_dict.pickle')
-    dump_dictionary(edge_dict, dir_dataset+ '-edge_dict.pickle')
-    return dataset
+ 
 def create_dataset(filename,path,dataname):
     dir_dataset = path+dataname
     print(filename)
@@ -137,38 +102,57 @@ def create_dataset(filename,path,dataname):
         """Exclude the data contains '.' in its smiles.排除含.的数据"""
     data_original = [data for data in data_original
                         ]
-    dataset = []
-    
+    dataset1 = []
+    dataset2 = []
     for data in data_original:
 
             
            
             try:
-                smiles, property = data.strip().split()
-                mol = Chem.AddHs(Chem.MolFromSmiles(smiles))
+                smiles1,smiles2, property = data.strip().split()
+                mol1 = Chem.AddHs(Chem.MolFromSmiles(smiles1))
+                mol2 = Chem.AddHs(Chem.MolFromSmiles(smiles2))
             except:
                 print(data)
                 continue
-            atoms = create_atoms(mol, atom_dict)
-            molecular_size = len(atoms)
-            i_jbond_dict = create_ijbonddict(mol, bond_dict)
-            fingerprints = extract_fingerprints(radius, atoms, i_jbond_dict,
-                                                    fingerprint_dict, edge_dict)
+            atoms1 = create_atoms(mol1, atom_dict1)
+            molecular_size1 = len(atoms1)
+            i_jbond_dict1 = create_ijbonddict(mol1, bond_dict1)
+            fingerprints1 = extract_fingerprints(radius, atoms1, i_jbond_dict1,
+                                                    fingerprint_dict1, edge_dict1)
             if hasattr(torch.cuda, 'empty_cache'):
                 torch.cuda.empty_cache()
-            adjacency = np.float32((Chem.GetAdjacencyMatrix(mol)))
+            adjacency1 = np.float32((Chem.GetAdjacencyMatrix(mol1)))
     #Transform the above each data of numpy to pytorch tensor on a device (i.e., CPU or GPU).
-            fingerprints = torch.LongTensor(fingerprints).to(device)
-            adjacency = torch.FloatTensor(adjacency).to(device)
+            fingerprints1 = torch.LongTensor(fingerprints1).to(device)
+            adjacency1 = torch.FloatTensor(adjacency1).to(device)
             property = torch.FloatTensor([[float(property)]]).to(device)
-            dataset.append((smiles,fingerprints, adjacency, molecular_size, property))
+            dataset1.append((smiles1,fingerprints1, adjacency1, molecular_size1, property))
+   
+            atoms2 = create_atoms(mol2, atom_dict2)
+            molecular_size2 = len(atoms2)
+            i_jbond_dict2 = create_ijbonddict(mol2, bond_dict2)
+            fingerprints2 = extract_fingerprints(radius, atoms2, i_jbond_dict2,
+                                                    fingerprint_dict2, edge_dict2)
+            if hasattr(torch.cuda, 'empty_cache'):
+                torch.cuda.empty_cache()
+            adjacency2 = np.float32((Chem.GetAdjacencyMatrix(mol2)))
+    #Transform the above each data of numpy to pytorch tensor on a device (i.e., CPU or GPU).
+            fingerprints2 = torch.LongTensor(fingerprints2).to(device)
+            adjacency2 = torch.FloatTensor(adjacency2).to(device)
+            property = torch.FloatTensor([[float(property)]]).to(device)
+            dataset2.append((smiles2,fingerprints2, adjacency2, molecular_size2, property))
+       
+    dump_dictionary(fingerprint_dict1, dir_dataset +dataname+ '-fingerprint_dict1.pickle')
+    dump_dictionary(atom_dict1, dir_dataset +dataname+ '-atom_dict1.pickle')
+    dump_dictionary(bond_dict1, dir_dataset  +dataname+ '-bond_dict1.pickle')
+    dump_dictionary(edge_dict1, dir_dataset +dataname+ '-edge_dict1.pickle')
+    dump_dictionary(fingerprint_dict2, dir_dataset +dataname+ '-fingerprint_dict2.pickle')
+    dump_dictionary(atom_dict2, dir_dataset +dataname+ '-atom_dict2.pickle')
+    dump_dictionary(bond_dict2, dir_dataset  +dataname+ '-bond_dict2.pickle')
+    dump_dictionary(edge_dict2, dir_dataset +dataname+ '-edge_dict2.pickle')    
     
-    dir_dataset=path
-    dump_dictionary(fingerprint_dict, dir_dataset +dataname+ '-fingerprint_dict.pickle')
-    dump_dictionary(atom_dict, dir_dataset +dataname+ '-atom_dict.pickle')
-    dump_dictionary(bond_dict, dir_dataset  +dataname+ '-bond_dict.pickle')
-    dump_dictionary(edge_dict, dir_dataset +dataname+ '-edge_dict.pickle')
-    return dataset
+    return dataset1,dataset2
 	
 def create_dataset_randomsplit(x,y,path,dataname):
     dir_input = path + 'SMRT-'
@@ -220,53 +204,7 @@ def create_dataset_randomsplit(x,y,path,dataname):
     dump_dictionary(edge_dict, dir_dataset +dataname+ '-edge_dict.pickle')
     return dataset
 	
-def create_dataset_kfold(x,y,path,dataname):
-    dir_input =path+'SMRT-'
-    with open(dir_input + 'atom_dict.pickle', 'rb') as f:
-        c=pickle.load(f)
-        for k in c.keys():
-            atom_dict.get(k)
-            atom_dict[k]=c[k]
-    with open(dir_input+ 'bond_dict.pickle', 'rb') as f:
-        c=pickle.load(f)
-        for k in c.keys():
-            bond_dict.get(k)
-            bond_dict[k]=c[k]
-        
-    with open(dir_input + 'edge_dict.pickle', 'rb') as f:
-        c=pickle.load(f)
-        for k in c.keys():
-            edge_dict.get(k)
-            edge_dict[k]=c[k]
-        
-    with open(dir_input + 'fingerprint_dict.pickle', 'rb') as f:
-        c=pickle.load(f)
-        for k in c.keys():
-            fingerprint_dict.get(k)
-            fingerprint_dict[k]=c[k]   
-    dataset = []
-    for i in range(len(x)):
-        smiles=x[i]
-        property=y[i]
-        """Create each data with the above defined functions."""
-        mol = Chem.AddHs(Chem.MolFromSmiles(smiles))
-        atoms = create_atoms(mol, atom_dict)
-        molecular_size = len(atoms)
-        i_jbond_dict = create_ijbonddict(mol, bond_dict)
-        fingerprints = extract_fingerprints(radius, atoms, i_jbond_dict,
-                                                fingerprint_dict, edge_dict)
-        adjacency = np.float32((Chem.GetAdjacencyMatrix(mol)))
-#Transform the above each data of numpy to pytorch tensor on a device (i.e., CPU or GPU).
-        fingerprints = torch.LongTensor(fingerprints).to(device)
-        adjacency = torch.FloatTensor(adjacency).to(device)
-        property = torch.FloatTensor([[float(property)]]).to(device)
-        dataset.append((smiles,fingerprints, adjacency, molecular_size, property))
-    dir_dataset=path
-    dump_dictionary(fingerprint_dict, dir_dataset +dataname+ '-fingerprint_dict.pickle')
-    dump_dictionary(atom_dict, dir_dataset +dataname+ '-atom_dict.pickle')
-    dump_dictionary(bond_dict, dir_dataset  +dataname+ '-bond_dict.pickle')
-    dump_dictionary(edge_dict, dir_dataset +dataname+ '-edge_dict.pickle')
-    return dataset
+
 
 
 def transferlearning_dataset_predict(x,path):

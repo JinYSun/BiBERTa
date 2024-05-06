@@ -30,6 +30,7 @@ class MolecularGraphNeuralNetwork(nn.Module):
         self.W_output = nn.ModuleList([nn.Linear(dim, dim)
                                        for _ in range(layer_output)])
         self.W_property = nn.Linear(dim, 1)
+        self.W_mlp = nn.Linear(dim*2, dim)
 
     def pad(self, matrices, pad_value):
         """Pad the list of matrices
@@ -86,52 +87,62 @@ class MolecularGraphNeuralNetwork(nn.Module):
 
     def mlp(self, vectors):
         """ regressor based on multilayer perceptron."""
+        vectors = torch.relu(self.W_mlp(vectors)) 
         for l in range(layer_output):
             vectors = torch.relu(self.W_output[l](vectors))
         outputs = self.W_property(vectors)
         return outputs
-    def forward_regressor(self, data_batch, train):
+    def forward_regressor(self, data_batch1,data_batch2, train):
 
-        inputs = data_batch[:-1]
-        correct_values = torch.cat(data_batch[-1])
+        inputs1 = data_batch1[:-1]
+        inputs2 = data_batch2[:-1]
+        correct_values = torch.cat(data_batch1[-1])
 
         if train:
-            Smiles,molecular_vectors = self.gnn(inputs)
+            Smiles1,molecular_vectors1 = self.gnn(inputs1)
+            Smiles2,molecular_vectors2 = self.gnn(inputs2)
+            molecular_vectors1 = molecular_vectors1.to('cpu').data.numpy()
+            molecular_vectors2 = molecular_vectors2.to('cpu').data.numpy()
+            molecular_vectors = np.concatenate((molecular_vectors1,molecular_vectors2),axis=1)
+            
+            molecular_vectors= torch.tensor(molecular_vectors).to(device)
+            
             predicted_values = self.mlp(molecular_vectors)
+            #print(molecular_vectors)
             loss = F.mse_loss(predicted_values, correct_values)
             return loss
         else:
             with torch.no_grad():
-                Smiles,molecular_vectors = self.gnn(inputs)
-                predicted_values = self.mlp(molecular_vectors)
+                 Smiles1,molecular_vectors1 = self.gnn(inputs1)
+                 Smiles2,molecular_vectors2 = self.gnn(inputs2)
+                 molecular_vectors1 = molecular_vectors1.to('cpu').data.numpy()
+                 molecular_vectors2 = molecular_vectors2.to('cpu').data.numpy()                 
+                 molecular_vectors = np.concatenate((molecular_vectors1,molecular_vectors2),axis=1) 
+                 molecular_vectors= torch.tensor(molecular_vectors).to(device)
+                 predicted_values = self.mlp(molecular_vectors)
             predicted_values = predicted_values.to('cpu').data.numpy()
             correct_values = correct_values.to('cpu').data.numpy()
             predicted_values = np.concatenate(predicted_values)
             correct_values = np.concatenate(correct_values)
-            return Smiles,predicted_values, correct_values
-    def forward_predict(self, data_batch):
-        inputs = data_batch
+            return Smiles1,predicted_values, correct_values
     
-        Smiles,molecular_vectors = self.gnn(inputs)
-        predicted_values = self.mlp(molecular_vectors)
-        predicted_values = predicted_values.to('cpu').data.numpy()
-        predicted_values = np.concatenate(predicted_values)
         
-        
-        return Smiles,predicted_values
+        return Smiles1,predicted_values
         
 class Trainer(object):
     def __init__(self, model):
         self.model = model
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
 
-    def train(self, dataset):
-        np.random.shuffle(dataset)
-        N = len(dataset)
+    def train(self, dataset1,dataset2):
+         
+        N1 = len(dataset1)
+        N2 = len(dataset2)
         loss_total = 0
-        for i in range(0, N, batch_train):
-            data_batch = list(zip(*dataset[i:i+batch_train]))
-            loss = self.model.forward_regressor(data_batch, train=True)
+        for i in range(0, N1, batch_train):
+            data_batch1 = list(zip(*dataset1[i:i+batch_train]))
+            data_batch2 = list(zip(*dataset2[i:i+batch_train]))
+            loss = self.model.forward_regressor(data_batch1,data_batch2, train=True)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
@@ -141,14 +152,15 @@ class Trainer(object):
 class Tester(object):
     def __init__(self, model):
         self.model = model
-    def test_regressor(self, dataset):
-        N = len(dataset)
+    def test_regressor(self, dataset1,dataset2):
+        N = len(dataset1)
         SMILES, Ts, Ys = '', [], []
         SAE = 0  # sum absolute error.
         for i in range(0, N, batch_test):
-            data_batch = list(zip(*dataset[i:i+batch_test]))
+            data_batch1 = list(zip(*dataset1[i:i+batch_test]))
+            data_batch2 = list(zip(*dataset2[i:i+batch_test]))
             (Smiles,  predicted_values,correct_values) = self.model.forward_regressor(
-                                               data_batch, train=False)
+                                               data_batch1,data_batch2, train=False)
             SMILES += ' '.join(Smiles) + ' '
             Ts.append(correct_values)
             Ys.append(predicted_values)
@@ -160,20 +172,7 @@ class Tester(object):
         predictions = '\n'.join(['\t'.join(x) for x in zip(SMILES, T, Y)])
         MAEs = SAE / N  # mean absolute error.
         return MAEs,predictions
-    def test_predict(self, dataset):
-        N = len(dataset)
-        SMILES, Ts, Ys = '', [], []
-        SAE = 0  # sum absolute error.
-        for i in range(0, N, batch_test):
-            data_batch = list(zip(*dataset[i:i+batch_test]))
-            (Smiles,  predicted_values) = self.model.forward_predict(
-                                               data_batch)
-            SMILES += ' '.join(Smiles) + ' '
-            Ys.append(predicted_values)
-        SMILES = SMILES.strip().split()
-        Y = map(str, np.concatenate(Ys))
-        predictions = '\n'.join(['\t'.join(x) for x in zip(SMILES, Y)])
-        return predictions
+  
     def save_MAEs(self, MAEs, filename):
         with open(filename, 'a') as f:
             f.write(MAEs + '\n')
@@ -230,24 +229,24 @@ def plot_confusion_matrix(cm, savename, title='Confusion Matrix'):
     plt.show()
 if __name__ == "__main__":
     radius=1
-    dim=54
-    layer_hidden=10
-    layer_output=10
-    batch_train=10
-    batch_test=10
+    dim=52
+    layer_hidden=2
+    layer_output=5
+    batch_train=50
+    batch_test=50
     lr=1e-3
-    lr_decay=0.85
-    decay_interval=25
-    iteration=500
+    lr_decay=0.95
+    decay_interval=20
+    iteration=800
     N=5000
-    path=r'J:/ADB/Discussion/'
+    path=r'J:/libray/DeepDAP/discussion/'
     dataname=''
-    device = torch.device('cpu')
+    device = torch.device('cuda')
     import datetime
     time1=str(datetime.datetime.now())[0:13]
-    dataset_traina = pp.create_dataset('traina.txt',path,dataname)
-    dataset_traind = pp.create_dataset('traind.txt',path,dataname)
-    dataset_test = pp.create_dataset('test0.txt',path,dataname)
+    dataset_traina,dataset_traind = pp.create_dataset('data.txt',path,dataname)
+    
+    dataset_testa,dataset_testd = pp.create_dataset('test.txt',path,dataname)
    # dataset_train, dataset_dev = split_dataset(dataset_train, 0.9)  
     
     lr, lr_decay = map(float, [lr, lr_decay])
@@ -258,7 +257,7 @@ if __name__ == "__main__":
     #     device = torch.device('cpu')
     #     print('The code uses a CPU...')
    
-    torch.manual_seed(1234)
+    torch.manual_seed(111)
     model = MolecularGraphNeuralNetwork(
             N, dim, layer_hidden, layer_output).to(device)
     trainer = Trainer(model)
@@ -266,21 +265,21 @@ if __name__ == "__main__":
     print('# of model parameters:',
           sum([np.prod(p.size()) for p in model.parameters()]))
     print('-'*100)
-
-    expain = 'gen'
-    file_MAEs = path+'data/output/'+'PCE_MAEs'+'.txt'
-    file_test_result  = path+'//'+'PCE_test_prediction'+ '.txt'
-    file_dev_result  = path+'data/output/'+ 'PCE_val_prediction'+ '.txt'
-    file_train_result  = path+'data/output/'+'PCE_train_prediction'+ '.txt'
-    file_model = path+ 'data/output/'+'PCE_model'+'.h5'
-    file1= path +'data/output/'+'PCE-MAE.png'
-    file2= path +'data/output/'+'PCE-train.png'
-    file3= path +'data/output/'+'PCE-test.png'
-    file4= path +'data/output/'+'PCE-val.png'
-       
+ 
+    file_MAEs = path+ 'PCE_MAEs'+'.txt'
+    file_test_result  = path+  'PCE_test_prediction'+ '.txt'
+    file_dev_result  = path+ 'PCE_val_prediction'+ '.txt'
+    file_train_result  = path+ 'PCE_train_prediction'+ '.txt'
+    file_model = path+  'PCE_model'+'.h5'
+    file1= path + 'PCE-MAE.png'
+    file2= path + 'PCE-train.png'
+    file3= path + 'PCE-test.png'
+    file4= path + 'PCE-val.png'
+  
     result = 'Epoch\tTime(sec)\tLoss_train\tMAE_train\tMAE_dev'  
     #tMAE_test
-
+    with open(file_MAEs, 'w') as f:
+        f.write(result + '\n') 
     print('Start training.')
     print('The result is saved in the output directory every epoch!')
     start = timeit.default_timer()
@@ -289,12 +288,12 @@ if __name__ == "__main__":
         if epoch % decay_interval == 0:
             trainer.optimizer.param_groups[0]['lr'] *= lr_decay
         model.train()
-        loss_train = trainer.train(dataset_train)
+        loss_train = trainer.train(dataset_traina,dataset_traind)
         MAE_tf_best=9999999
         model.eval()
-        MAE_tf_train,predictions_train_tf = tester.test_regressor(dataset_train)
-        MAE_tf_dev = tester.test_regressor(dataset_test)[0]
-        #MAE_tf_test = tester.test_predict(dataset_dev)[0]
+        MAE_train,predictions_train = tester.test_regressor(dataset_traina,dataset_traind)
+        MAE_dev = tester.test_regressor(dataset_testa,dataset_testd)[0]
+     
         time = timeit.default_timer() - start
         if epoch == 1:
             minutes = time * iteration / 60
@@ -304,12 +303,12 @@ if __name__ == "__main__":
                    hours, 'hours', minutes, 'minutes.')
             print('-'*100)
             print(result)
-        results = '\t'.join(map(str, [epoch, time, loss_train,MAE_tf_train, MAE_tf_dev]))#, MAE_tf_test
-       # tester.save_MAEs(results, file_MAEs)
-        if MAE_tf_dev <= MAE_tf_best:
-            MAE_tf_best = MAE_tf_dev
+        result = '\t'.join(map(str, [epoch, time, loss_train, MAE_train, MAE_dev])) 
+        tester.save_MAEs(result, file_MAEs)
+        if MAE_dev <= MAE_tf_best:
+            MAE_tf_best = MAE_dev
            # tester.save_model(model, file_model)
-        print(results)
+        print(result)
 
     loss = pd.read_table(file_MAEs)
     plt.plot(loss['MAE_train'], color='b',label='MSE of train set')
@@ -321,34 +320,11 @@ if __name__ == "__main__":
     plt.savefig(file1,dpi=300)
     plt.show()
     
-    predictions_train = tester.test_regressor(dataset_train)[1]
-    tester.save_predictions(predictions_train, file_train_result )
-    predictions_test = tester.test_regressor(dataset_test)[1]
+ 
+    predictions_test = tester.test_regressor(dataset_testa,dataset_testd)[1]
     tester.save_predictions(predictions_test, file_test_result)
     
-    
-    res = pd.read_table(file_train_result)
-    
-    r2 = r2_score(res ['Correct'], res ['Predict'])
-    mae = mean_absolute_error(res ['Correct'], res ['Predict'])
-    medae = median_absolute_error(res ['Correct'], res ['Predict'])
-    rmae = np.mean(np.abs(res ['Correct'] - res ['Predict']) / res ['Correct']) * 100
-    median_re = np.median(np.abs(res ['Correct'] - res ['Predict']) / res ['Correct'])
-    mean_re=np.mean(np.abs(res ['Correct'] - res ['Predict']) / res ['Correct'])
-    plt.plot(res ['Correct'], res ['Predict'], '.', color = 'blue')
-    plt.plot([4,12], [4,12], color ='red')
-    plt.ylabel('Predicted PCE')
-    plt.xlabel('Experimental trainPCE')        
-    plt.text(4,12, 'R2='+str(round(r2,4)), fontsize=12)
-    plt.text(6,11,'MAE='+str(round(mae,4)),fontsize=12)
-    plt.text(8, 10, 'MedAE='+str(round(medae,4)), fontsize=12)
-    plt.text(4, 11, 'MRE='+str(round(mean_re,4)), fontsize=12)
-    plt.text(6, 12, 'MedRE='+str(round(median_re,4)), fontsize=12)
-    plt.savefig( path+expain+time1+'PCE-train.tif',dpi=300)
-    plt.figure()
-    plt.show()
-    
-    
+   
     # r2 = r2_score(res ['Correct'], res ['Predict'])
     # mae = mean_absolute_error(res ['Correct'], res ['Predict'])
     # medae = median_absolute_error(res ['Correct'], res ['Predict'])
@@ -375,6 +351,7 @@ if __name__ == "__main__":
     rmae = np.mean(np.abs(res ['Correct'] - res ['Predict']) / res ['Correct']) * 100
     median_re = np.median(np.abs(res ['Correct'] - res ['Predict']) / res ['Correct'])
     mean_re=np.mean(np.abs(res ['Correct'] - res ['Predict']) / res ['Correct'])
+    mse = mean_squared_error(res ['Correct'], res ['Predict'])
     plt.plot(res ['Correct'], res ['Predict'], '.', color = 'green')
     plt.plot([4,12], [4,12], color ='red')
     plt.ylabel('Predicted PCE')
@@ -389,55 +366,3 @@ if __name__ == "__main__":
     plt.show()
     from scipy.stats import pearsonr
     print(pearsonr(res ['Correct'], res ['Predict']))
-    from sklearn.metrics import confusion_matrix
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-
-    classes = ['A', 'B', 'C']
-    A=[]
-    B=[]
-    C=0
-    D=0
-    for a in res ['Correct']:
-        if a <3:
-            a=1
-            A.append(a)
-            
-        elif a<9 :
-            a=2
-            A.append(a)
-        # elif a<9:
-        #     a=3
-        #     A.append(a)
-        elif a>9:
-            
-            a=3
-            A.append(a)
-    for a in res ['Predict']:
-        if a <3:
-            a=1
-            B.append(a)
-        # elif a <6:
-        #     a=2
-        #     B.append(a)
-        elif a<9:
-            a=2
-            B.append(a)
-        elif a>9:
-            
-            a=3
-            B.append(a)
-    # 获取混淆矩阵
-    random_numbers = np.random.randint(6, size=50)  # 6个类别，随机生成50个样本
-    y_true = random_numbers.copy()  # 样本实际标签
-    random_numbers[:10] = np.random.randint(6, size=10)  # 将前10个样本的值进行随机更改
-    y_pred = random_numbers  # 样本预测标签
-    
-    A=np.array(A)
-    B=np.array(B)
-    cm = confusion_matrix(A, B)
-    plot_confusion_matrix(cm, 'confusion_matrix.png', title='confusion matrix')
-    cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    plot_confusion_matrix(cm, 'confusion_matrix.png', title='confusion matrix')
-    print(cm_normalized)

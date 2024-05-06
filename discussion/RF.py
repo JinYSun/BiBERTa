@@ -155,11 +155,11 @@ def edit_dataset(drug,non_drug,task):
   #  dataset_dev = dataset_dev_drug+dataset_dev_no
     return dataset_train, dataset_test
 if __name__ == "__main__":
-    data_train= pd.read_csv(r"C:\Users\BM109X32G-10GPU-02\Desktop\crossdata\train.csv")
-    data_test=pd.read_csv(r"C:\Users\BM109X32G-10GPU-02\Desktop\crossdata\test.csv")
+    data_train= pd.read_csv(r"J:\libray\DeepDAP\DeepDAP\dataset\OSC\train.csv")
+    data_test=pd.read_csv(r"J:\libray\DeepDAP\DeepDAP\dataset\OSC\test.csv")
     dono = list(data_train['donor'])
     acce= list(data_train['acceptor'])
-    rts = list(data_train['PCE'])
+    rts = list(data_train['Label'])
     
     smiles, targets = [], []
     for i, inc in enumerate(tqdm(dono)):
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     
     dono = list(data_test['donor'])
     acce= list(data_test['acceptor'])
-    rts = list(data_test['PCE'])
+    rts = list(data_test['Label'])
     
     smiles, targets = [], []
     for i, inc in enumerate(tqdm(dono)):
@@ -249,9 +249,9 @@ if __name__ == "__main__":
     Y_test=targets
     n_features=10
     from sklearn.ensemble import GradientBoostingRegressor 
-    #model = RandomForestRegressor(n_estimators=100)
+    model = RandomForestRegressor(n_estimators=100)
     #model = MLPClassifier(rangdom_state=1,max_iter=300)
-    model = GradientBoostingRegressor()
+   # model = GradientBoostingRegressor()
    
     # earlyStopping = EarlyStopping(monitor='val_loss', patience=0.05, verbose=0, mode='min')
     #mcp_save = ModelCheckpoint('C:/Users/sunjinyu/Desktop/FingerID Reference/drug-likeness/CNN/single_model.h5', save_best_only=True, monitor='accuracy', mode='auto')

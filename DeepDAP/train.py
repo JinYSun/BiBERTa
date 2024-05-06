@@ -1,12 +1,13 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+ 
 from curses import delay_output
 import gc, os
-from turtle import forward
+
 import numpy as np
 import pandas as pd
 import wandb
-
+from scipy.stats import pearsonr
 from util.utils import *
 from util.attention_flow import *
 
@@ -53,6 +54,7 @@ class markerDataset(Dataset):
     def tokenize_data(self, acc_data, don_data):
         
         tokenize_acc = ['[CLS]'] + self.d_tokenizer.tokenize(acc_data) + ['[SEP]']
+       
         tokenize_don = ['[CLS]'] + self.p_tokenizer.tokenize(don_data) + ['[SEP]']
 
         return tokenize_acc, tokenize_don
@@ -67,8 +69,8 @@ class markerDataset(Dataset):
         acc_data = self.df.iloc[index]['acceptor']
         don_data = self.df.iloc[index]['donor']
     
-        d_inputs = self.d_tokenizer(acc_data, padding='max_length', max_length=400, truncation=True, return_tensors="pt")
-        p_inputs = self.p_tokenizer(don_data, padding='max_length', max_length=400, truncation=True, return_tensors="pt")
+        d_inputs = self.d_tokenizer(acc_data, padding='max_length', max_length=510, truncation=True, return_tensors="pt")
+        p_inputs = self.p_tokenizer(don_data, padding='max_length', max_length=510, truncation=True, return_tensors="pt")
 
         d_input_ids = d_inputs['input_ids'].squeeze()
         d_attention_mask = d_inputs['attention_mask'].squeeze()
@@ -106,7 +108,7 @@ class markerDataModule(pl.LightningDataModule):
     def get_task(self, task_name):
         if task_name.lower() == 'OSC':
             return './dataset/OSC/'
-
+                                                                                                                                                                                                         
         elif task_name.lower() == 'merge':
             self.load_testData = False
             return './dataset/MergeDataset'
@@ -117,7 +119,7 @@ class markerDataModule(pl.LightningDataModule):
         dataFolder = './dataset/OSC'
         
         self.df_train = pd.read_csv(dataFolder + '/train.csv')
-        self.df_val = pd.read_csv(dataFolder + '/val.csv')
+        self.df_val = pd.read_csv(dataFolder + '/test.csv')
        
         ## -- Data Lenght Rate apply -- ##
         traindata_length = int(len(self.df_train) * self.traindata_rate)
@@ -169,7 +171,7 @@ class markerModel(pl.LightningModule):
                                                         output_hidden_states=True,
                                                         output_attentions=True)
         
-        don_config = AutoConfig.from_pretrained(don_model_name)
+        don_config = AutoConfig.from_pretrained(acc_model_name)
 
         if p_pretrained is False:
             self.p_model = RobertaModel(don_config)
@@ -235,10 +237,10 @@ class markerModel(pl.LightningModule):
             loss = self.criterion(logits, labels)
         else:
             loss = self.criterion_smooth(logits, labels)
-
-        self.log("train_loss", loss)
+        
+        self.log("train_loss", loss, on_step=False, on_epoch=True, logger=True)
+       # print("train_loss", loss)
         return {"loss": loss}
-
 
     def validation_step(self, batch, batch_idx):
         acc_inputs = {'input_ids': batch[0], 'attention_mask': batch[1]}
@@ -247,13 +249,15 @@ class markerModel(pl.LightningModule):
         
         output = self(acc_inputs, don_inputs)
         logits = output.squeeze(dim=1)
-
+        
+      
         if self.loss_fn == 'MSE':
             loss = self.criterion(logits, labels)
         else:
             loss = self.criterion_smooth(logits, labels)
 
         self.log("valid_loss", loss, on_step=False, on_epoch=True, logger=True)
+       # print("valid_loss", loss)
         return {"logits": logits, "labels": labels}
 
     def validation_step_end(self, outputs):
@@ -261,9 +265,9 @@ class markerModel(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         preds = self.convert_outputs_to_preds(outputs)
-        labels = torch.as_tensor(torch.cat([output['labels'] for output in outputs], dim=0), dtype=torch.int)
+        labels = torch.as_tensor(torch.cat([output['labels'] for output in outputs], dim=0), dtype=torch.float)
 
-        mae, mse, r2 = self.log_score(preds, labels)
+        mae, mse, r2,r = self.log_score(preds, labels)
                    
         self.log("mae", mae, on_step=False, on_epoch=True, logger=True)
         self.log("mse", mse, on_step=False, on_epoch=True, logger=True)
@@ -291,16 +295,14 @@ class markerModel(pl.LightningModule):
 
     def test_epoch_end(self, outputs):
         preds = self.convert_outputs_to_preds(outputs)
-        labels = torch.as_tensor(torch.cat([output['labels'] for output in outputs], dim=0), dtype=torch.int)
-
-        mae, mse, r2 = self.log_score(preds, labels)
-
-
-
+        labels = torch.as_tensor(torch.cat([output['labels'] for output in outputs], dim=0), dtype=torch.float)
+        
+        mae, mse, r2,r = self.testlog_score(preds, labels)
+        
         self.log("mae", mae, on_step=False, on_epoch=True, logger=True)
         self.log("mse", mse, on_step=False, on_epoch=True, logger=True)
         self.log("r2", r2, on_step=False, on_epoch=True, logger=True)
-
+        
     def configure_optimizers(self):
     
         param_optimizer = list(self.named_parameters())
@@ -325,20 +327,38 @@ class markerModel(pl.LightningModule):
     def convert_outputs_to_preds(self, outputs):
         logits = torch.cat([output['logits'] for output in outputs], dim=0)
         return logits
-
-    def log_score(self, preds, labels):
+   
+    def testlog_score(self, preds, labels):
         y_pred = preds.detach().cpu().numpy()
         y_label = labels.detach().cpu().numpy()
-  
+        results = pd.concat([pd.DataFrame(y_pred) ], axis=1)
+        results.to_csv('results.txt',index = None)
+
         mae = mean_absolute_error(y_label, y_pred)
         mse =  mean_squared_error(y_label, y_pred)
         r2=r2_score(y_label, y_pred)
-  
+        r = pearsonr(y_label, y_pred)
         print(f'\nmae : {mae}')        
         print(f'mse : {mse}')
         print(f'r2 : {r2}')
+        print(f'r : {r}')
 
-        return mae, mse, r2
+        return mae, mse, r2, r
+    
+    def log_score(self, preds, labels):
+        y_pred = preds.detach().cpu().numpy()
+        y_label = labels.detach().cpu().numpy()
+
+        mae = mean_absolute_error(y_label, y_pred)
+        mse =  mean_squared_error(y_label, y_pred)
+        r2=r2_score(y_label, y_pred)
+        r = pearsonr(y_label, y_pred)
+        print(f'\nmae : {mae}')        
+        print(f'mse : {mse}')
+        print(f'r2 : {r2}')
+        print(f'r : {r}')
+
+        return mae, mse, r2, r
 
 
 def main_wandb(config=None):
@@ -358,14 +378,14 @@ def main_wandb(config=None):
  
         model_type = str(config.pretrained['chem'])+"To"+str(config.pretrained['prot'])
         #model_logger = WandbLogger(project=project_name)
-        checkpoint_callback = ModelCheckpoint(f"{config.task_name}_{model_type}_{config.lr}_{config.num_seed}", save_top_k=1, monitor="mae", mode="max")
+        checkpoint_callback = ModelCheckpoint(f"{config.task_name}_{model_type}_{config.lr}_{config.num_seed}",every_n_epochs = 1, save_top_k= -1, monitor="mae", mode="min")
     
         trainer = pl.Trainer(
                              max_epochs=config.max_epoch,
                              precision=16,
                              #logger=model_logger,
                              callbacks=[checkpoint_callback],
-                             accelerator='cpu'
+                             accelerator='cpu',log_every_n_steps=25
                              )
 
 
@@ -383,7 +403,7 @@ def main_wandb(config=None):
             
             model.eval()
             trainer.test(model, datamodule=dm)
-
+            
     except Exception as e:
         print(e)
 
@@ -398,16 +418,16 @@ def main_default(config):
         
         dm.prepare_data()
         dm.setup()   
-        model_type = str(config.pretrained['chem'])+"To"+str(config.pretrained['prot'])
+        model_type = str(config.pretrained['chem'])+"To"+str(config.pretrained['prot']) 
        # model_logger = TensorBoardLogger("./log", name=f"{config.task_name}_{model_type}_{config.num_seed}")
-        checkpoint_callback = ModelCheckpoint(f"{config.task_name}_{model_type}_{config.lr}_{config.num_seed}", save_top_k=1, monitor="mae", mode="max")
+        checkpoint_callback = ModelCheckpoint(f"{config.task_name}_{model_type}_{config.lr}_{config.num_seed}", every_n_epochs = 1, save_top_k= -1, monitor="mae", mode="min")
     
         trainer = pl.Trainer(
                              max_epochs=config.max_epoch,
                              precision= 32,
                             # logger=model_logger,
                              callbacks=[checkpoint_callback],
-                             accelerator='cpu'
+                             accelerator='gpu',log_every_n_steps = 1
                              )
 
         
@@ -421,13 +441,13 @@ def main_default(config):
 
             model.eval()
             trainer.test(model, datamodule=dm)
-            
+ 
         else:
             model = markerModel.load_from_checkpoint(config.load_checkpoint)
             
             model.eval()
             trainer.test(model, datamodule=dm)
-
+            
     except Exception as e:
         print(e)
 

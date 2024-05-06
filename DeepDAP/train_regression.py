@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 import wandb
 
-from utils.utils import *
-from utils.attention_flow import *
-from utils.emetric import get_cindex, get_rm2
+from util.utils import *
+from util.attention_flow import *
+from util.emetric import get_cindex, get_rm2
 
 import torch
 import torch.nn as nn
@@ -15,7 +15,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from transformers import AutoTokenizer
-from train import BiomarkerModel
+from train import markerModel
 
 from sklearn.metrics import mean_squared_error
 
@@ -79,18 +79,18 @@ class DTIpredictDataModule(pl.LightningDataModule):
         self.test_dataset = None
 
     def get_task(self, task_name):
-        if task_name.lower() == 'biosnap':
-            return './dataset/BIOSNAP/full_data'
-        elif task_name.lower() == 'bindingdb':
-            return './dataset/BindingDB'
-        elif task_name.lower() == 'davis':
-            return './dataset/DAVIS'
+        if task_name  == 'OSC':
+            return './dataset/OSC/'
+
+        elif task_name.lower() == 'merge':
+            self.load_testData = False
+            return './dataset/MergeDataset'
 
     def prepare_data(self):
         # Use this method to do things that might write to disk or that need to be done only from
         # a single process in distributed settings.
-        dataFolder = self.get_task(self.task_name)
-
+        dataFolder = self.get_task(str(self.task_name))
+         
         self.df_train = pd.read_csv(dataFolder + '/train.csv')
         self.df_val = pd.read_csv(dataFolder + '/val.csv')
 
@@ -104,13 +104,13 @@ class DTIpredictDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
-            self.train_dataset = DTIpredictDataset(self.df_train.index.values, self.df_train.Y.values, self.df_train,
+            self.train_dataset = DTIpredictDataset(self.df_train.index.values, self.df_train.Label.values, self.df_train,
                                                   self.d_tokenizer, self.p_tokenizer, self.prot_maxLength)
-            self.valid_dataset = DTIpredictDataset(self.df_val.index.values, self.df_val.Y.values, self.df_val,
+            self.valid_dataset = DTIpredictDataset(self.df_val.index.values, self.df_val.Label.values, self.df_val,
                                                   self.d_tokenizer, self.p_tokenizer, self.prot_maxLength)
 
         if self.load_testData is True:
-            self.test_dataset = DTIpredictDataset(self.df_test.index.values, self.df_test.Y.values, self.df_test,
+            self.test_dataset = DTIpredictDataset(self.df_test.index.values, self.df_test.Label.values, self.df_test,
                                                 self.d_tokenizer, self.p_tokenizer, self.prot_maxLength)
 
     def train_dataloader(self):
@@ -287,7 +287,7 @@ def main_wandb(config=None):
                              precision=16,
                              logger=model_logger,
                              callbacks=[checkpoint_callback],
-                             accelerator='dp'
+                             accelerator='cpu'
                              )
         
         model_file = f"./log/{config.task_name}_{modeltype}_{config.lr}_{DTImodel_seed[config.task_name]}/*.ckpt"
@@ -340,7 +340,7 @@ def main_default(config):
                              precision=16,
                              logger=model_logger,
                              callbacks=[checkpoint_callback],
-                             accelerator='dp'
+                             accelerator='cpu'
                              )
 
         model_file = f"./log/{config.task_name}_{modeltype}_{config.lr}_{DTImodel_seed[config.task_name]}/*.ckpt"
@@ -365,7 +365,6 @@ def main_default(config):
                 model = BiomarkerModel.load_from_checkpoint(model_file)
                 
                 model.eval()
-                trainer.test(model, datamodule=dm)
 
     except Exception as e:
         print(e)

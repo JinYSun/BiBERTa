@@ -1,23 +1,22 @@
-{
-	"name": "biomarker_log",
 
-	"d_model_name" : "DeepChem/ChemBERTa-77M-MLM",
-	"p_model_name" : "DeepChem/ChemBERTa-10M-MTR",
-	
+{	"name": "biomarker_log",
+
+	"d_model_name" : "DeepChem/ChemBERTa-10M-MTR",
+	"p_model_name" : "DeepChem/ChemBERTa-10M-MLM",
 	"gpu_ids" : "0",
 	"model_mode" : "train",
 	"load_checkpoint" : "./checkpoint/bindingDB/test.ckpt",
 
-	"prot_maxlength" : 360,
+	"prot_maxlength" : 510,
 	"layer_limit" : true,
 
-	"max_epoch": 120,
-	"batch_size": 100,
+	"max_epoch": 16,
+	"batch_size": 20,
 	"num_workers": 0,
 
 	"task_name" : "OSC",
-	"lr": 5e-4,
-	"layer_features" : [512, 128, 64, 1],
+	"lr": 1e-3,
+	"layer_features" : [128,128,128, 1],
 	"dropout" : 0.1,
 	"loss_fn" : "MSE",
 

@@ -3,8 +3,7 @@
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.datasets import make_regression
-from sklearn.ensemble import GradientBoostingRegressor
+
 from sklearn.datasets import make_blobs
 import json
 import numpy as np
@@ -156,13 +155,14 @@ def edit_dataset(drug,non_drug,task):
   #  dataset_dev = dataset_dev_drug+dataset_dev_no
     return dataset_train, dataset_test
 if __name__ == "__main__":
-    data_train= pd.read_csv('H:/qdf/qdf/dataset/transf/train0.csv')
-    data_test=pd.read_csv('H:/qdf/qdf/dataset/transf/test0.csv')
-    inchis = list(data_train['SMILES'])
-    rts = list(data_train['PCE'])
+    data_train= pd.read_csv(r"J:\libray\DeepDAP\DeepDAP\dataset\OSC\train.csv")
+    data_test=pd.read_csv(r"J:\libray\DeepDAP\DeepDAP\dataset\OSC\test.csv")
+    dono = list(data_train['donor'])
+    acce= list(data_train['acceptor'])
+    rts = list(data_train['Label'])
     
     smiles, targets = [], []
-    for i, inc in enumerate(tqdm(inchis)):
+    for i, inc in enumerate(tqdm(dono)):
         mol = Chem.MolFromSmiles(inc)
         if mol is None:
             continue
@@ -171,16 +171,33 @@ if __name__ == "__main__":
             smiles.append(smi)
             targets.append(rts[i])
             
-    words = get_dict(smiles, save_path='E:\code\FingerID Reference\drug-likeness/dict.json')
-    
+    words = get_dict(smiles, save_path='J:/ADB/Discussion/dict.json')
+      
     features = []
     for i, smi in enumerate(tqdm(smiles)):
-        xi = one_hot_coding(smi, words, max_len=600)
+        xi = one_hot_coding(smi, words, max_len=1000)
         if xi is not None:
             features.append(xi.todense())
+    acceptor,smiles =  [], []
+    for i, inc in enumerate(tqdm(acce)):
+        mol = Chem.MolFromSmiles(inc)
+        if mol is None:
+            continue
+        else:
+            smi = Chem.MolToSmiles(mol)
+            smiles.append(smi)
+   
+    for i, smi in enumerate(tqdm(smiles)):
+        xi = one_hot_coding(smi, words, max_len=1000)
+        if xi is not None:
+            acceptor.append(xi.todense())    
+      
     features = np.asarray(features)
+    acceptor = np.asarray(acceptor)
     targets = np.asarray(targets)
-    X_train=features
+    don=features
+    acc=acceptor
+    X_train=np.dstack((don,acc))
     Y_train=targets
       
 
@@ -189,12 +206,12 @@ if __name__ == "__main__":
   #  tf.config.experimental.set_memory_growth(physical_devices[0], True)
     
     
-  
-    inchis = list(data_test['SMILES'])
-    rts = list(data_test['PCE'])
+    dono = list(data_test['donor'])
+    acce= list(data_test['acceptor'])
+    rts = list(data_test['Label'])
     
     smiles, targets = [], []
-    for i, inc in enumerate(tqdm(inchis)):
+    for i, inc in enumerate(tqdm(dono)):
         mol = Chem.MolFromSmiles(inc)
         if mol is None:
             continue
@@ -202,23 +219,39 @@ if __name__ == "__main__":
             smi = Chem.MolToSmiles(mol)
             smiles.append(smi)
             targets.append(rts[i])
-            
-   # words = get_dict(smiles, save_path='D:/工作文件/work.Data/CNN/dict.json')
-    
     features = []
     for i, smi in enumerate(tqdm(smiles)):
-        xi = one_hot_coding(smi, words, max_len=600)
+        xi = one_hot_coding(smi, words, max_len=1000)
         if xi is not None:
-            features.append(xi.todense())
+            features.append(xi.todense())            
+            
+    acceptor,smiles =  [], []
+    for i, inc in enumerate(tqdm(acce)):
+        mol = Chem.MolFromSmiles(inc)
+        if mol is None:
+            continue
+        else:
+            smi = Chem.MolToSmiles(mol)
+            smiles.append(smi)
+   
+    for i, smi in enumerate(tqdm(smiles)):
+        xi = one_hot_coding(smi, words, max_len=1000)
+        if xi is not None:
+            acceptor.append(xi.todense())    
+            
+
     features = np.asarray(features)
     targets = np.asarray(targets)
-    X_test=features
+    acceptor = np.asarray(acceptor)
+    don=features
+    acc=acceptor
+    X_test=np.dstack((don,acc))
     Y_test=targets
     n_features=10
-    
-    model = GradientBoostingRegressor(n_estimators=100)
+    from sklearn.ensemble import GradientBoostingRegressor 
+    #model = RandomForestRegressor(n_estimators=100)
     #model = MLPClassifier(rangdom_state=1,max_iter=300)
-    #model = SVC()
+    model = GradientBoostingRegressor()
    
     # earlyStopping = EarlyStopping(monitor='val_loss', patience=0.05, verbose=0, mode='min')
     #mcp_save = ModelCheckpoint('C:/Users/sunjinyu/Desktop/FingerID Reference/drug-likeness/CNN/single_model.h5', save_best_only=True, monitor='accuracy', mode='auto')
@@ -240,61 +273,16 @@ if __name__ == "__main__":
     cc = np.array([x, y])
     cc_zscore_corr = np.corrcoef(cc)
     from scipy.stats import pearsonr
+    from sklearn.metrics import mean_absolute_error,r2_score,mean_squared_error
     print(pearsonr(x,y))
     
     r2 = r2_score(x,y)
     mae = mean_absolute_error(x,y)
-    medae = median_absolute_error(x,y)
+    mse = mean_squared_error(x,y)
    
     from scipy.stats import pearsonr
-    print(pearsonr(x,y))
-    classes = ['A', 'B', 'C']
-    A=[]
-    B=[]
-    C=0
-    D=0
-    for a in y:
-        if a <3:
-            a=1
-            A.append(a)
-            
-        elif a<9 :
-            a=2
-            A.append(a)
-        # elif a<9:
-        #     a=3
-        #     A.append(a)
-        elif a>8.5:
-            
-            a=3
-            A.append(a)
-    for a in x:
-        if a <3:
-            a=1
-            B.append(a)
-        # elif a <6:
-        #     a=2
-        #     B.append(a)
-        elif a<9:
-            a=2
-            B.append(a)
-        elif a>8.5:
-            
-            a=3
-            B.append(a)
-    # 获取混淆矩阵
-    random_numbers = np.random.randint(6, size=50)  # 6个类别，随机生成50个样本
-    y_true = random_numbers.copy()  # 样本实际标签
-    random_numbers[:10] = np.random.randint(6, size=10)  # 将前10个样本的值进行随机更改
-    y_pred = random_numbers  # 样本预测标签
-    
-    A=np.array(A)
-    B=np.array(B)
-    cm = confusion_matrix(A, B)
-    plot_confusion_matrix(cm, 'confusion_matrix.png', title='confusion matrix')
-    cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    plot_confusion_matrix(cm, 'confusion_matrix.png', title='confusion matrix')
-    print(cm_normalized)
+    print(pearsonr(x,y),mse,mae,r2)
+
   #  X= pd.concat([x,y], axis=1)
     #X.to_csv('C:/Users/sunjinyu/Desktop/FingerID Reference/drug-likeness/CNN/molecularGNN_smiles-master/0825/single-CNN-seed444.csv')
     #Y_predict = [1 if i >0.4 else 0 for i in Y_predict]
