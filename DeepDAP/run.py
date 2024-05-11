@@ -54,13 +54,13 @@ def biomarker_prediction(smile_acc, smile_don):
        
             
         das_input =smile_don
-        d_inputs = tokenizer(aas_input, padding='max_length', max_length=400, truncation=True, return_tensors="pt")
+        d_inputs = tokenizer(aas_input, padding='max_length', max_length=510, truncation=True, return_tensors="pt")
         # d_inputs = tokenizer(smiles, truncation=True, return_tensors="pt")
         drug_input_ids = d_inputs['input_ids'].to(device)
         drug_attention_mask = d_inputs['attention_mask'].to(device)
         drug_inputs = {'input_ids': drug_input_ids, 'attention_mask': drug_attention_mask}
 
-        p_inputs = prot_tokenizer(das_input, padding='max_length', max_length=400, truncation=True, return_tensors="pt")
+        p_inputs = prot_tokenizer(das_input, padding='max_length', max_length=510, truncation=True, return_tensors="pt")
         # p_inputs = prot_tokenizer(aas_input, truncation=True, return_tensors="pt")
         prot_input_ids = p_inputs['input_ids'].to(device)
         prot_attention_mask = p_inputs['attention_mask'].to(device)
@@ -75,7 +75,7 @@ def biomarker_prediction(smile_acc, smile_don):
         return {'Error_message': e}
 
 
-def smiles_aas_test(smile_acc,smile_don):
+def smiles_adp_test(smile_acc,smile_don):
     mola =  Chem.MolFromSmiles(smile_acc) 
     smile_acc = Chem.MolToSmiles(mola,   canonical=True)
     mold =  Chem.MolFromSmiles(smile_don)  
@@ -100,7 +100,7 @@ def smiles_aas_test(smile_acc,smile_don):
     
 
 if __name__ == "__main__":
-    a = smiles_aas_test('CCCCC(CC)CC1=C(F)C=C(C2=C3C=C(C4=CC=C(C5=C6C(=O)C7=C(CC(CC)CCCC)SC(CC(CC)CCCC)=C7C(=O)C6=C(C6=CC=C(C)S6)S5)S4)SC3=C(C3=CC(F)=C(CC(CC)CCCC)S3)C3=C2SC(C)=C3)S1','CCCCC(CC)CC1=CC=C(C2=C3C=C(C)SC3=C(C3=CC=C(CC(CC)CCCC)S3)C3=C2SC(C2=CC4=C(C5=CC(Cl)=C(CC(CC)CCCC)S5)C5=C(C=C(C)S5)C(C5=CC(Cl)=C(CC(CC)CCCC)S5)=C4S2)=C3)S1')                         
+    a = smiles_adp_test('CCCCC(CC)CC1=C(F)C=C(C2=C3C=C(C4=CC=C(C5=C6C(=O)C7=C(CC(CC)CCCC)SC(CC(CC)CCCC)=C7C(=O)C6=C(C6=CC=C(C)S6)S5)S4)SC3=C(C3=CC(F)=C(CC(CC)CCCC)S3)C3=C2SC(C)=C3)S1','CCCCC(CC)CC1=CC=C(C2=C3C=C(C)SC3=C(C3=CC=C(CC(CC)CCCC)S3)C3=C2SC(C2=CC4=C(C5=CC(Cl)=C(CC(CC)CCCC)S5)C5=C(C=C(C)S5)C(C5=CC(Cl)=C(CC(CC)CCCC)S5)=C4S2)=C3)S1')                         
     
                      
     

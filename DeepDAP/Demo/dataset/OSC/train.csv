@@ -1,0 +1,4 @@
+,donor,acceptor,Label,Label
+954,CCCCCCCCSc1ccc(-c2c3cc(-c4cc(C(=O)OCC(CC)CCCC)c(-c5ccc(-c6sc(C)cc6C(=O)OCC(CC)CCCC)s5)s4)sc3c(-c3ccc(SCCCCCCCC)s3)c3cc(C)sc23)s1,CCCCCCc1ccc(C2(c3ccc(CCCCCC)cc3)c3cc4c(cc3-c3sc5cc(/C=C6\C(=O)c7cc(C)ccc7C6=C(C#N)C#N)sc5c32)C(c2ccc(CCCCCC)cc2)(c2ccc(CCCCCC)cc2)c2c-4sc3cc(/C=C4\C(=O)c5cc(C)ccc5C4=C(C#N)C#N)sc23)cc1,0.01,0.01
+1300,CCCCCCc1cc(C)sc1C,CCCCCCCCN1C(=O)C2=C(c3ccc(C#Cc4ccc5c(c4)C(=O)N(CC(CC)CCCC)C5=O)s3)N(CCCCCCCC)C(=O)C2=C1c1ccc(C#Cc2ccc3c(c2)C(=O)N(CC(CC)CCCC)C3=O)s1,0.02,0.02
+153,CCCCCCc1cc(C)sc1C,CCCCN1c2ccccc2C2=C(C#N)C(=O)c3c2c1cc1c3N(CCCC)c2ccccc2/C1=C(/C#N)C(=O)O,0.03,0.03

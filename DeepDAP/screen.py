@@ -25,6 +25,7 @@ d_tokenizer = AutoTokenizer.from_pretrained(d_model_name)
 
 #--biomarker Model
 ##-- hyper param config file Load --##
+
 config = load_hparams('config/predict.json')
 config = DictX(config)
 model = markerModel(config.d_model_name, config.p_model_name,

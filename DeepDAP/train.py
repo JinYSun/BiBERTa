@@ -450,14 +450,11 @@ def main_default(config):
             
     except Exception as e:
         print(e)
-
-
-if __name__ == '__main__':
-    using_wandb = False
-    
+        
+def main(using_wandb = False, hparams = 'config/config_hparam.json'):
     if using_wandb == True:
         #-- hyper param config file Load --##
-        config = load_hparams('config/config_hparam.json')
+        config = load_hparams(hparams)
         project_name = config["name"]
    
         main_wandb(config)
@@ -469,6 +466,8 @@ if __name__ == '__main__':
         # wandb.agent(sweep_id, main_wandb)
 
     else:
-        config = load_hparams('config/config_hparam.json')
+        config = load_hparams(hparams)
         
         main_default(config)  
+if __name__ == '__main__':
+    main(using_wandb = False, hparams = 'config/config_hparam.json')

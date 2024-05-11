@@ -1,0 +1,3 @@
+,donor,acceptor,Label
+0,CCCCCCCCCC(CCc1ccc(C)s1)Cc1sc(-c2c3cc(-c4ccc(-c5sc(-c6ccc(C)s6)c6c5C(=O)c5c(CC(CC)CCCC)sc(CC(CC)CCCC)c5C6=O)s4)sc3c(-c3cc(Cl)c(CC(CCCCCCCCC)CCc4ccc(CCCCCC)s4)s3)c3cc(C)sc23)cc1Cl,CCCCCCCCCCCc1c(/C=C2\C(=O)c3cc(F)c(F)cc3C2=C(C#N)C#N)sc2c1sc1c3c4nsnc4c4c5sc6c(CCCCCCCCCCC)c(/C=C7\C(=O)c8cc(F)c(F)cc8C7=C(C#N)C#N)sc6c5n(CC(CC)CCCC)c4c3n(CC(CC)CCCC)c21,12.68
+1,CCCCCCC(CCCC)CSc1ccc(-c2c3cc(-c4ccc(-c5c(F)c(F)c(-c6ccc(C)s6)c6nn(CC(CCCC)CCCCCC)nc56)s4)sc3c(-c3ccc(SCC(CCCC)CCCCCC)s3)c3cc(C)sc23)s1,CCCCCCc1ccc(C2(c3ccc(CCCCCC)cc3)c3cc4c(cc3-c3sc5cc(/C=C6\C(=O)c7ccccc7C6=C(C#N)C#N)sc5c32)C(c2ccc(CCCCCC)cc2)(c2ccc(CCCCCC)cc2)c2c-4sc3cc(/C=C4\C(=O)c5ccccc5C4=C(C#N)C#N)sc23)cc1,10.5

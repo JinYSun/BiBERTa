@@ -49,8 +49,8 @@ class markerDataset(Dataset):
         acc_data = self.df.iloc[index]['acceptor']
         don_data = self.df.iloc[index]['donor']
         acc_data, don_data = self.tokenize_data(acc_data, don_data)
-        d_inputs = self.d_tokenizer(acc_data, padding='max_length', max_length=400, truncation=True, return_tensors="pt")
-        p_inputs = self.p_tokenizer(don_data, padding='max_length', max_length=400, truncation=True, return_tensors="pt")
+        d_inputs = self.d_tokenizer(acc_data, padding='max_length', max_length=510, truncation=True, return_tensors="pt")
+        p_inputs = self.p_tokenizer(don_data, padding='max_length', max_length=510, truncation=True, return_tensors="pt")
         
         d_input_ids = d_inputs['input_ids'].squeeze()
         d_attention_mask = d_inputs['attention_mask'].squeeze()
@@ -317,7 +317,7 @@ def main_default(config):
                              precision= 32,
                             # logger=model_logger,
                              callbacks=[checkpoint_callback],
-                             accelerator='cpu',log_every_n_steps=40
+                             accelerator='cuda',log_every_n_steps=40
                              )
 
         
@@ -329,14 +329,12 @@ def main_default(config):
             
     except Exception as e:
         print(e)
-
-
-if __name__ == '__main__':
-    using_wandb = False
-    
+        
+def main(using_wandb = False, hparams = 'config/predict.json'):
+         
     if using_wandb == True:
         #-- hyper param config file Load --##
-        config = load_hparams('config/predict.json')
+        config = load_hparams(hparams)
         project_name = config["name"]
    
         main_wandb(config)
@@ -348,6 +346,9 @@ if __name__ == '__main__':
         # wandb.agent(sweep_id, main_wandb)
 
     else:
-        config = load_hparams('config/predict.json')
+        config = load_hparams(hparams)
         
         main_default(config)  
+
+if __name__ == '__main__':
+    main(using_wandb = False, hparams = 'config/predict.json')
