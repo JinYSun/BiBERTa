@@ -11,11 +11,11 @@
 	"layer_limit" : true,
 
 	"max_epoch": 16,
-	"batch_size": 20,
+	"batch_size": 40,
 	"num_workers": 0,
 
 	"task_name" : "OSC",
-	"lr": 1e-3,
+	"lr": 1e-4,
 	"layer_features" : [128,128,128, 1],
 	"dropout" : 0.1,
 	"loss_fn" : "MSE",

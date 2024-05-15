@@ -167,7 +167,7 @@ class markerModel(pl.LightningModule):
             self.d_model = RobertaModel(acc_config)
             print('acceptor model without pretraining')
         else:
-            self.d_model = RobertaModel.from_pretrained(acc_model_name, num_labels=2,
+            self.d_model = RobertaModel.from_pretrained(acc_model_name,  
                                                         output_hidden_states=True,
                                                         output_attentions=True)
         
@@ -332,7 +332,7 @@ class markerModel(pl.LightningModule):
         y_pred = preds.detach().cpu().numpy()
         y_label = labels.detach().cpu().numpy()
         results = pd.concat([pd.DataFrame(y_pred) ], axis=1)
-        results.to_csv('results.txt',index = None)
+        #results.to_csv('results.txt',index = None)
 
         mae = mean_absolute_error(y_label, y_pred)
         mse =  mean_squared_error(y_label, y_pred)
