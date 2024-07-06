@@ -86,7 +86,7 @@ def smiles_adp_test(smile_acc,smile_don):
         output_pred = biomarker_prediction((smile_acc), (smile_don))
 
         datas = output_pred
-
+        print(datas)
         ## -- Export result data to csv -- ##
         # df = pd.DataFrame(datas)
         # df.to_csv('./results/predict_test.csv', index=None)
