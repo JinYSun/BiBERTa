@@ -29,7 +29,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from transformers import AutoConfig, AutoTokenizer, RobertaModel, BertModel
 from sklearn.metrics import r2_score, mean_absolute_error,mean_squared_error
 
-class markerDataset(Dataset):
+class bibertaDataset(Dataset):
     def __init__(self, list_IDs, labels, df_dti, d_tokenizer, p_tokenizer):
         'Initialization'
         self.labels = labels
@@ -63,7 +63,7 @@ class markerDataset(Dataset):
         return dataset
 
 
-class markerDataModule(pl.LightningDataModule):
+class bibertaDataModule(pl.LightningDataModule):
     def __init__(self, task_name, acc_model_name, don_model_name, num_workers, batch_size,  traindata_rate = 1.0):
         super().__init__()
         self.batch_size = batch_size
@@ -103,14 +103,14 @@ class markerDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
 
         if self.load_testData is True:
-            self.test_dataset = markerDataset(self.df_test.index.values, self.df_test.Label.values, self.df_test,
+            self.test_dataset = bibertaDataset(self.df_test.index.values, self.df_test.Label.values, self.df_test,
                                                 self.d_tokenizer, self.p_tokenizer)
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
 
 
-class markerModel(pl.LightningModule):
+class bibertaModel(pl.LightningModule):
     def __init__(self, acc_model_name, don_model_name, lr, dropout, layer_features, loss_fn = "smooth", layer_limit = True, d_pretrained=True, p_pretrained=True):
         super().__init__()
         self.lr = lr
@@ -261,7 +261,7 @@ def main_wandb(config=None):
         config = wandb.config
         pl.seed_everything(seed=config.num_seed)
  
-        dm = markerDataModule(config.task_name, config.d_model_name, config.p_model_name,
+        dm = bibertaDataModule(config.task_name, config.d_model_name, config.p_model_name,
                                  config.num_workers, config.batch_size, config.prot_maxlength, config.traindata_rate)
         dm.prepare_data()
         dm.setup()
@@ -280,7 +280,7 @@ def main_wandb(config=None):
 
 
         if config.model_mode == "train":
-            model = markerModel(config.d_model_name, config.p_model_name,
+            model = bibertaModel(config.d_model_name, config.p_model_name,
                                config.lr, config.dropout, config.layer_features, config.loss_fn, config.layer_limit, config.pretrained['chem'], config.pretrained['prot'])
             model.train()
             trainer.fit(model, datamodule=dm)
@@ -289,7 +289,7 @@ def main_wandb(config=None):
             trainer.test(model, datamodule=dm)
 
         else:
-            model = markerModel.load_from_checkpoint(config.load_checkpoint)
+            model = bibertaModel.load_from_checkpoint(config.load_checkpoint)
             
             model.eval()
             trainer.test(model, datamodule=dm)
@@ -303,7 +303,7 @@ def main_default(config):
         config = DictX(config)
         pl.seed_everything(seed=config.num_seed)
         
-        dm = markerDataModule(config.task_name, config.d_model_name, config.p_model_name,
+        dm = bibertaDataModule(config.task_name, config.d_model_name, config.p_model_name,
                                  config.num_workers, config.batch_size, config.traindata_rate)
         
         dm.prepare_data()
@@ -322,7 +322,7 @@ def main_default(config):
 
         
 
-        model = markerModel.load_from_checkpoint(config.load_checkpoint,strict=False)
+        model = bibertaModel.load_from_checkpoint(config.load_checkpoint,strict=False)
         
         model.eval()
         trainer.test(model, datamodule=dm)

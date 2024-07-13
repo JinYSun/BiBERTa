@@ -12,28 +12,6 @@ It is a deep learning-based framework built for new donor/acceptor pairs discove
 
 We recommend to use [conda](https://conda.io/docs/user-guide/install/download.html) and [pip](https://pypi.org/project/pip/).
 
-torch==1.10.0+cu113, 
-
-pytorch-lightning==1.9.2, 
-
-transformers==4.12.0,
-
-numpy==1.20.0, 
-
-pandas==1.4.3, 
-
-curses=2.2.1+utf8,
-
-scikit-learn==1.1.2,
-
-scipy==1.4.1,
-
-tqdm==4.66.1,
-
-easydict==1.10
-
-plotly==5.3.1
-
 **By using the *requirements.txt* file, it will install all the required packages.**
 
 ```
@@ -76,7 +54,7 @@ large scale screening by inputting a file
 
 ```
 from BiBERTa import screen
-screen.smiles_aas_test(r'DeepDAP/dataset/OSC/test.csv')
+screen.smiles_aas_test(r'BiBERTa/dataset/OSC/test.csv')
 ```
 
 predicting by input the SMILES of donor  and acceptor
@@ -90,7 +68,46 @@ a = run.smiles_adp_test ('CCCCC(CC)CC1=C(F)C=C(C2=C3C=C(C4=CC=C(C5=C6C(=O)C7=C(C
 
 ## <u>web server</u> 
 
- The  web server of BiBERTa is available at [BiBERTa - a Hugging Face Space by jinysun](https://huggingface.co/spaces/jinysun/BiBERTa). 
+ The  web server of BiBERTa is available at [Hugging Face Space by jinysun](https://huggingface.co/spaces/jinysun/BiBERTa). 
+
+Users can also use API to predict the PCE as follows:
+
+```
+from gradio_client import Client
+
+'''
+Predicting by using the SMILES of donor and acceptor
+'''
+
+client = Client("jinysun/BiBERTa")
+result = client.predict(
+		acceptor="SMILES of acceptor",
+		donor="SMILES of donor",
+		api_name="/predict"
+)
+print(result)
+```
+
+```
+from gradio_client import Client, handle_file
+
+'''
+Screening by using the file containing SMILES of donors and acceptors
+'''
+
+client = Client("jinysun/BiBERTa")
+result = client.predict(
+		file_obj=handle_file('Address of file to be screened'),
+		api_name="/predict_1"
+)
+print(result)
+```
+
+
+
+## Demo
+
+The [example.ipynb](https://github.com/JinYSun/DeepAcceptor/blob/master/abcBERT/Demo/example.ipynb) was used to show the whole process of abcBERT. The files in Demo were used to test that the codes work well. The parameters (such as epochs, dataset size) were set to small numbers to show how the abcBERT worked.
 
 ## <u>Discussion</u> 
 
