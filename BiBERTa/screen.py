@@ -82,7 +82,7 @@ def biberta_prediction(smiles, aas):
 
 def smiles_aas_test(file):
      
-    batch_size = 80
+    batch_se = 80
     try:
         datas = []
         biberta_list = []
@@ -90,28 +90,12 @@ def smiles_aas_test(file):
 
         smiles_aas = pd.read_csv(file)
         
-        ## -- 1 to 1 pair predict check -- ##
-        for data in smiles_aas.values:
-            mola =  Chem.MolFromSmiles(data[2]) 
-            data[2] = Chem.MolToSmiles(mola,   canonical=True)
-            mola =  Chem.MolFromSmiles(data[1]) 
-            data[1] = Chem.MolToSmiles(mola,   canonical=True)                        
-            biberta_datas.append([data[2], data[1]])
-            if len(biberta_datas) == batch_size:
-                biberta_list.append(list(biberta_datas))
-                biberta_datas.clear()
-
-        if len(biberta_datas) != 0:
-            biberta_list.append(list(biberta_datas))
-            biberta_datas.clear()
-            
-        for biberta_datas in tqdm(biberta_list, total=len(biberta_list)):
-            smiles_d , smiles_a  = zip(*biberta_datas)
-            output_pred = biberta_prediction(list(smiles_d), list(smiles_a) )
-            if len(datas) == 0:
-                datas = output_pred
-            else:
-                datas = datas + output_pred
+        smiles_d , smiles_a  = (smiles_aas['donor'],smiles_aas['acceptor'])
+        output_pred = biberta_prediction(list(smiles_a), list(smiles_d) )
+        if len(datas) == 0:
+            datas = output_pred
+        else:
+            datas = datas + output_pred
 
         # ## -- Export result data to csv -- ##
         # df = pd.DataFrame(datas)
