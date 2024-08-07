@@ -91,7 +91,16 @@ def smiles_aas_test(file):
         smiles_aas = pd.read_csv(file)
         
         smiles_d , smiles_a  = (smiles_aas['donor'],smiles_aas['acceptor'])
-        output_pred = biberta_prediction(list(smiles_a), list(smiles_d) )
+        
+        donor,acceptor =[],[]
+        for i in smiles_d:
+            s = Chem.MolToSmiles(Chem.MolFromSmiles(i))
+            donor.append(s)
+        for i in smiles_a:
+            s = Chem.MolToSmiles(Chem.MolFromSmiles(i))
+            acceptor.append(s)    
+            
+        output_pred = biberta_prediction(list(acceptor), list(donor) )
         if len(datas) == 0:
             datas = output_pred
         else:
