@@ -19,6 +19,7 @@ git clone --depth=1 https://github.com/JinYSun/biberta.git
 cd biberta
 conda create --name biberta
 conda activate biberta
+conda install pip
 pip install -r requirements.txt
 ```
 
@@ -43,9 +44,8 @@ pip install -r requirements.txt
 ## <u>Model Training</u>
 
 ```
-from BiBERTa import train
-
-train.main(using_wandb = False, hparams = 'config/config_hparam.json')
+cd BiBERTa
+python train.py
 ```
 
 ## <u>Model Prediction</u>
@@ -53,15 +53,13 @@ train.main(using_wandb = False, hparams = 'config/config_hparam.json')
 large scale screening by inputting a file
 
 ```
-from BiBERTa import screen
-screen.smiles_aas_test(r'BiBERTa/dataset/OSC/test.csv')
+python -c "import screen; screen.smiles_aas_test(r'BiBERTa/dataset/OSC/test.csv')"
 ```
 
 predicting by input the SMILES of donor  and acceptor
 
 ```
-from BiBERTa import run
-a = run.smiles_adp_test ('CCCCC(CC)CC1=C(F)C=C(C2=C3C=C(C4=CC=C(C5=C6C(=O)C7=C(CC(CC)CCCC)SC(CC(CC)CCCC)=C7C(=O)C6=C(C6=CC=C(C)S6)S5)S4)SC3=C(C3=CC(F)=C(CC(CC)CCCC)S3)C3=C2SC(C)=C3)S1','CCCCC(CC)CC1=CC=C(C2=C3C=C(C)SC3=C(C3=CC=C(CC(CC)CCCC)S3)C3=C2SC(C2=CC4=C(C5=CC(Cl)=C(CC(CC)CCCC)S5)C5=C(C=C(C)S5)C(C5=CC(Cl)=C(CC(CC)CCCC)S5)=C4S2)=C3)S1') 
+python -c "import run; run.smiles_adp_test ('CCCCC(CC)CC1=C(F)C=C(C2=C3C=C(C4=CC=C(C5=C6C(=O)C7=C(CC(CC)CCCC)SC(CC(CC)CCCC)=C7C(=O)C6=C(C6=CC=C(C)S6)S5)S4)SC3=C(C3=CC(F)=C(CC(CC)CCCC)S3)C3=C2SC(C)=C3)S1','CCCCC(CC)CC1=CC=C(C2=C3C=C(C)SC3=C(C3=CC=C(CC(CC)CCCC)S3)C3=C2SC(C2=CC4=C(C5=CC(Cl)=C(CC(CC)CCCC)S5)C5=C(C=C(C)S5)C(C5=CC(Cl)=C(CC(CC)CCCC)S5)=C4S2)=C3)S1') "
 ```
 
 [test.ipynb](https://github.com/JinYSun/biberta/blob/branch/test.ipynb):    contain the tutorials to show how to use the model for prediction.

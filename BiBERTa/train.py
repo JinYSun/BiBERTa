@@ -1,7 +1,6 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
  
-from curses import delay_output
 import gc, os
 
 import numpy as np
@@ -338,10 +337,10 @@ class bibertaModel(pl.LightningModule):
         mse =  mean_squared_error(y_label, y_pred)
         r2=r2_score(y_label, y_pred)
         r = pearsonr(y_label, y_pred)
-        print(f'mae : {mae}')        
-        print(f'mse : {mse}')
-        print(f'r2 : {r2}')
-        print(f'r : {r}')
+        print('mae : {}'.format(mae))
+        print('mse : {}'.format(mse))
+        print('r2 : {}'.format(r2))
+        print('r : {}'.format(r))
 
         return mae, mse, r2, r
     
@@ -353,10 +352,10 @@ class bibertaModel(pl.LightningModule):
         mse =  mean_squared_error(y_label, y_pred)
         r2=r2_score(y_label, y_pred)
         r = pearsonr(y_label, y_pred)
-        print(f'mae : {mae}')        
-        print(f'mse : {mse}')
-        print(f'r2 : {r2}')
-        print(f'r : {r}')
+        print('mae : {}'.format(mae))
+        print('mse : {}'.format(mse))
+        print('r2 : {}'.format(r2))
+        print('r : {}'.format(r))
 
         return mae, mse, r2, r
 
@@ -378,7 +377,7 @@ def main_wandb(config=None):
  
         model_type = str(config.pretrained['chem'])+"To"+str(config.pretrained['prot'])
         #model_logger = WandbLogger(project=project_name)
-        checkpoint_callback = ModelCheckpoint(f"{config.task_name}_{model_type}_{config.lr}_{config.num_seed}",every_n_epochs = 1, save_top_k= -1, monitor="mae", mode="min")
+        checkpoint_callback = ModelCheckpoint("{}_{}_{}_{}".format(config.task_name,model_type,config.lr,config.num_seed),every_n_epochs = 1, save_top_k= -1, monitor="mae", mode="min")
     
         trainer = pl.Trainer(
                              max_epochs=config.max_epoch,
@@ -420,7 +419,7 @@ def main_default(config):
         dm.setup()   
         model_type = str(config.pretrained['chem'])+"To"+str(config.pretrained['prot']) 
        # model_logger = TensorBoardLogger("./log", name=f"{config.task_name}_{model_type}_{config.num_seed}")
-        checkpoint_callback = ModelCheckpoint(f"{config.task_name}_{model_type}_{config.lr}_{config.num_seed}", every_n_epochs = 1, save_top_k= -1, monitor="mae", mode="min")
+        checkpoint_callback = ModelCheckpoint("{}_{}_{}_{}".format(config.task_name,model_type,config.lr,config.num_seed), every_n_epochs = 1, save_top_k= -1, monitor="mae", mode="min")
     
         trainer = pl.Trainer(
                              max_epochs=config.max_epoch,
