@@ -1,7 +1,6 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
  
-from curses import delay_output
 import gc, os
 
 import numpy as np
@@ -23,7 +22,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from transformers import AutoConfig, AutoTokenizer, RobertaModel, BertModel
 from sklearn.metrics import r2_score, mean_absolute_error,mean_squared_error
 
-class markerDataset(Dataset):
+class bibertaDataset(Dataset):
     def __init__(self, list_IDs, labels, df_dti, d_tokenizer, p_tokenizer):
         'Initialization'
         self.labels = labels
@@ -83,7 +82,7 @@ class markerDataset(Dataset):
         return dataset
 
 
-class markerDataModule(pl.LightningDataModule):
+class bibertaDataModule(pl.LightningDataModule):
     def __init__(self, task_name, acc_model_name, don_model_name, num_workers, batch_size,  traindata_rate = 1.0):
         super().__init__()
         self.batch_size = batch_size
@@ -133,13 +132,13 @@ class markerDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
-            self.train_dataset = markerDataset(self.df_train.index.values, self.df_train.Label.values, self.df_train,
+            self.train_dataset = bibertaDataset(self.df_train.index.values, self.df_train.Label.values, self.df_train,
                                                   self.d_tokenizer, self.p_tokenizer)
-            self.valid_dataset = markerDataset(self.df_val.index.values, self.df_val.Label.values, self.df_val,
+            self.valid_dataset = bibertaDataset(self.df_val.index.values, self.df_val.Label.values, self.df_val,
                                                   self.d_tokenizer, self.p_tokenizer)
 
         if self.load_testData is True:
-            self.test_dataset = markerDataset(self.df_test.index.values, self.df_test.Label.values, self.df_test,
+            self.test_dataset = bibertaDataset(self.df_test.index.values, self.df_test.Label.values, self.df_test,
                                                 self.d_tokenizer, self.p_tokenizer)
 
     def train_dataloader(self):
@@ -152,7 +151,7 @@ class markerDataModule(pl.LightningDataModule):
         return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
 
 
-class markerModel(pl.LightningModule):
+class bibertaModel(pl.LightningModule):
     def __init__(self, acc_model_name, don_model_name, lr, dropout, layer_features, loss_fn = "smooth", layer_limit = True, d_pretrained=True, p_pretrained=True):
         super().__init__()
         self.lr = lr
@@ -167,7 +166,7 @@ class markerModel(pl.LightningModule):
             self.d_model = RobertaModel(acc_config)
             print('acceptor model without pretraining')
         else:
-            self.d_model = RobertaModel.from_pretrained(acc_model_name, num_labels=2,
+            self.d_model = RobertaModel.from_pretrained(acc_model_name,  
                                                         output_hidden_states=True,
                                                         output_attentions=True)
         
@@ -332,16 +331,16 @@ class markerModel(pl.LightningModule):
         y_pred = preds.detach().cpu().numpy()
         y_label = labels.detach().cpu().numpy()
         results = pd.concat([pd.DataFrame(y_pred) ], axis=1)
-        results.to_csv('results.txt',index = None)
+        #results.to_csv('results.txt',index = None)
 
         mae = mean_absolute_error(y_label, y_pred)
         mse =  mean_squared_error(y_label, y_pred)
         r2=r2_score(y_label, y_pred)
         r = pearsonr(y_label, y_pred)
-        print(f'\nmae : {mae}')        
-        print(f'mse : {mse}')
-        print(f'r2 : {r2}')
-        print(f'r : {r}')
+        print('mae : {}'.format(mae))
+        print('mse : {}'.format(mse))
+        print('r2 : {}'.format(r2))
+        print('r : {}'.format(r))
 
         return mae, mse, r2, r
     
@@ -353,10 +352,10 @@ class markerModel(pl.LightningModule):
         mse =  mean_squared_error(y_label, y_pred)
         r2=r2_score(y_label, y_pred)
         r = pearsonr(y_label, y_pred)
-        print(f'\nmae : {mae}')        
-        print(f'mse : {mse}')
-        print(f'r2 : {r2}')
-        print(f'r : {r}')
+        print('mae : {}'.format(mae))
+        print('mse : {}'.format(mse))
+        print('r2 : {}'.format(r2))
+        print('r : {}'.format(r))
 
         return mae, mse, r2, r
 
@@ -371,14 +370,14 @@ def main_wandb(config=None):
         config = wandb.config
         pl.seed_everything(seed=config.num_seed)
  
-        dm = markerDataModule(config.task_name, config.d_model_name, config.p_model_name,
+        dm = bibertaDataModule(config.task_name, config.d_model_name, config.p_model_name,
                                  config.num_workers, config.batch_size, config.prot_maxlength, config.traindata_rate)
         dm.prepare_data()
         dm.setup()
  
         model_type = str(config.pretrained['chem'])+"To"+str(config.pretrained['prot'])
         #model_logger = WandbLogger(project=project_name)
-        checkpoint_callback = ModelCheckpoint(f"{config.task_name}_{model_type}_{config.lr}_{config.num_seed}",every_n_epochs = 1, save_top_k= -1, monitor="mae", mode="min")
+        checkpoint_callback = ModelCheckpoint("{}_{}_{}_{}".format(config.task_name,model_type,config.lr,config.num_seed),every_n_epochs = 1, save_top_k= -1, monitor="mae", mode="min")
     
         trainer = pl.Trainer(
                              max_epochs=config.max_epoch,
@@ -390,7 +389,7 @@ def main_wandb(config=None):
 
 
         if config.model_mode == "train":
-            model = markerModel(config.d_model_name, config.p_model_name,
+            model = bibertaModel(config.d_model_name, config.p_model_name,
                                config.lr, config.dropout, config.layer_features, config.loss_fn, config.layer_limit, config.pretrained['chem'], config.pretrained['prot'])
             model.train()
             trainer.fit(model, datamodule=dm)
@@ -399,7 +398,7 @@ def main_wandb(config=None):
             trainer.test(model, datamodule=dm)
 
         else:
-            model = markerModel.load_from_checkpoint(config.load_checkpoint)
+            model = bibertaModel.load_from_checkpoint(config.load_checkpoint)
             
             model.eval()
             trainer.test(model, datamodule=dm)
@@ -413,14 +412,14 @@ def main_default(config):
         config = DictX(config)
         pl.seed_everything(seed=config.num_seed)
         
-        dm = markerDataModule(config.task_name, config.d_model_name, config.p_model_name,
+        dm = bibertaDataModule(config.task_name, config.d_model_name, config.p_model_name,
                                  config.num_workers, config.batch_size, config.traindata_rate)
         
         dm.prepare_data()
         dm.setup()   
         model_type = str(config.pretrained['chem'])+"To"+str(config.pretrained['prot']) 
        # model_logger = TensorBoardLogger("./log", name=f"{config.task_name}_{model_type}_{config.num_seed}")
-        checkpoint_callback = ModelCheckpoint(f"{config.task_name}_{model_type}_{config.lr}_{config.num_seed}", every_n_epochs = 1, save_top_k= -1, monitor="mae", mode="min")
+        checkpoint_callback = ModelCheckpoint("{}_{}_{}_{}".format(config.task_name,model_type,config.lr,config.num_seed), every_n_epochs = 1, save_top_k= -1, monitor="mae", mode="min")
     
         trainer = pl.Trainer(
                              max_epochs=config.max_epoch,
@@ -432,7 +431,7 @@ def main_default(config):
 
         
         if config.model_mode == "train":
-            model = markerModel(config.d_model_name, config.p_model_name,
+            model = bibertaModel(config.d_model_name, config.p_model_name,
                                config.lr, config.dropout, config.layer_features, config.loss_fn, config.layer_limit, config.pretrained['chem'], config.pretrained['prot'])
             
             model.train()
@@ -443,7 +442,7 @@ def main_default(config):
             trainer.test(model, datamodule=dm)
  
         else:
-            model = markerModel.load_from_checkpoint(config.load_checkpoint)
+            model = bibertaModel.load_from_checkpoint(config.load_checkpoint)
             
             model.eval()
             trainer.test(model, datamodule=dm)
