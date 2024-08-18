@@ -14,7 +14,7 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = '0 '
 
 device_count = torch.cuda.device_count()
-device_biobiberta = torch.device('cuda' if torch.cuda.is_available() else "cpu")
+device_biberta= torch.device('cuda' if torch.cuda.is_available() else "cpu")
 
 device = torch.device('cpu')
 a_model_name = 'DeepChem/ChemBERTa-10M-MLM'
@@ -23,7 +23,7 @@ d_model_name = 'DeepChem/ChemBERTa-10M-MTR'
 tokenizer = AutoTokenizer.from_pretrained(a_model_name)
 d_tokenizer = AutoTokenizer.from_pretrained(d_model_name)
 
-#--biobiberta Model
+#--bibertaModel
 ##-- hyper param config file Load --##
 
 config = load_hparams('config/predict.json')
@@ -36,7 +36,7 @@ model = bibertaModel.load_from_checkpoint(config.load_checkpoint,strict=False)
 model.eval()
 model.freeze()
     
-if device_biobiberta.type == 'cuda':
+if device_biberta.type == 'cuda':
     model = torch.nn.DataParallel(model)
     
 def get_biberta(drug_inputs, prot_inputs):

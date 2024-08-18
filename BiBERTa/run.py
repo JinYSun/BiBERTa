@@ -13,7 +13,7 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = '0,1'
 
 device_count = torch.cuda.device_count()
-device_biobiberta = torch.device('cuda' if torch.cuda.is_available() else "cpu")
+device_biberta = torch.device('cuda' if torch.cuda.is_available() else "cpu")
 
 device = torch.device('cpu')
 d_model_name = 'DeepChem/ChemBERTa-10M-MTR'
@@ -22,21 +22,21 @@ p_model_name = 'DeepChem/ChemBERTa-10M-MLM'
 tokenizer = AutoTokenizer.from_pretrained(d_model_name)
 prot_tokenizer = AutoTokenizer.from_pretrained(p_model_name)
 
-#--biobiberta Model
+#--biberta Model
 ##-- hyper param config file Load --##
 config = load_hparams('config/predict.json')
 config = DictX(config)
 model = bibertaModel.load_from_checkpoint(config.load_checkpoint,strict=False)
         
-# model = BiobibertaModel.load_from_checkpoint('./biobiberta_bindingdb_train8595_pretopre/3477h3wf/checkpoints/epoch=30-step=7284.ckpt').to(device_biobiberta)
+# model = bibertaModel.load_from_checkpoint('./biberta_bindingdb_train8595_pretopre/3477h3wf/checkpoints/epoch=30-step=7284.ckpt').to(device_biberta)
 
 model.eval()
 model.freeze()
     
-if device_biobiberta.type == 'cuda':
+if device_biberta.type == 'cuda':
     model = torch.nn.DataParallel(model)
     
-def get_biobiberta(drug_inputs, prot_inputs):
+def get_biberta(drug_inputs, prot_inputs):
     output_preds = model(drug_inputs, prot_inputs)
     
     predict = torch.squeeze((output_preds)).tolist()
@@ -48,7 +48,7 @@ def get_biobiberta(drug_inputs, prot_inputs):
     return predict
 
 
-def biobiberta_prediction(smile_acc, smile_don):
+def biberta_prediction(smile_acc, smile_don):
     try:
         aas_input = smile_acc
        
@@ -66,7 +66,7 @@ def biobiberta_prediction(smile_acc, smile_don):
         prot_attention_mask = p_inputs['attention_mask'].to(device)
         prot_inputs = {'input_ids': prot_input_ids, 'attention_mask': prot_attention_mask}
 
-        output_predict = get_biobiberta(drug_inputs, prot_inputs)
+        output_predict = get_biberta(drug_inputs, prot_inputs)
         
         return output_predict
 
@@ -83,7 +83,7 @@ def smiles_adp_test(smile_acc,smile_don):
 
     batch_size = 1
     try:
-        output_pred = biobiberta_prediction((smile_acc), (smile_don))
+        output_pred = biberta_prediction((smile_acc), (smile_don))
 
         datas = output_pred
         print(datas)
