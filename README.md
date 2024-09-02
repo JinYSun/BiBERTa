@@ -17,7 +17,7 @@ We recommend to use [conda](https://conda.io/docs/user-guide/install/download.ht
 ```
 git clone --depth=1 https://github.com/JinYSun/biberta.git
 cd biberta
-conda create --name biberta python3.11
+conda create --name biberta python=3.8
 conda activate biberta
 conda install pip
 pip install -r requirements.txt
