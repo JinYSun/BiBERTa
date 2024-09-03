@@ -107,8 +107,8 @@ def smiles_aas_test(file):
             datas = datas + output_pred
 
         # ## -- Export result data to csv -- ##
-        # df = pd.DataFrame(datas)
-        # df.to_csv('./results/predictData_nontonon_bindingdb_test.csv', index=None)
+        df = pd.DataFrame(datas)
+        df.to_csv('results.csv', index=None)
 
         # print(df)
         return datas
