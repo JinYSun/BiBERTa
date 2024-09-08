@@ -80,13 +80,16 @@ Then, users can also use API to predict the PCE locally as follows. It should be
 from gradio_client import Client
 
 '''
-Predicting by using the SMILES of donor and acceptor, the size of file can't be too large.
+Predicting by using the SMILES of donor and acceptor
+
+acceptor (str) :Input the SMILES of acceptor 
+donor (str) :Input the SMILES of donor 
 '''
 
 client = Client("jinysun/BiBERTa")
 result = client.predict(
-		acceptor="SMILES of acceptor",
-		donor="SMILES of donor",
+		acceptor="CCCCCCCCCCCC1=C(/C=C2\C(=O)C3=C(C=C(F)C(F)=C3)C2=C(C#N)C#N)SC2=C1SC1=C2N(CC(CC)CCCC)C2=C1C1=NSN=C1C1=C2N(CC(CC)CCCC)C2=C1SC1=C2SC(/C=C2\C(=O)C3=C(C=C(F)C(F)=C3)C2=C(C#N)C#N)=C1CCCCCCCCCCC",
+		donor="CCCCC(CC)CC1=C(F)C=C(C2=C3C=C(C4=CC=C(C5=C6C(=O)C7=C(CC(CC)CCCC)SC(CC(CC)CCCC)=C7C(=O)C6=C(C6=CC=C(C)S6)S5)S4)SC3=C(C3=CC(F)=C(CC(CC)CCCC)S3)C3=C2SC(C)=C3)S1",
 		api_name="/predict"
 )
 print(result)
@@ -96,12 +99,14 @@ print(result)
 from gradio_client import Client, handle_file
 
 '''
-Screening by using the file containing SMILES of donors and acceptors
+Screening by using the file containing SMILES of donors and acceptors, the size of the file can't be too large.
+
+handle_file: Input the address of file
 '''
 
 client = Client("jinysun/BiBERTa")
 result = client.predict(
-		file_obj=handle_file('Address of file to be screened'),
+		file_obj=handle_file(r'BiBERTa/Demo/dataset/OSC/test.csv'),
 		api_name="/predict_1"
 )
 print(result)
