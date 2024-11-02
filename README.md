@@ -1,4 +1,4 @@
-# BiBERTa
+BiBERTa
 
 ### **<u>Deep learning-assisted to accelerate the discovery of donor/acceptor pairs for high-performance organic solar cells</u>**
 
@@ -63,54 +63,6 @@ python -c "import run; run.smiles_adp_test ('CCCCC(CC)CC1=C(F)C=C(C2=C3C=C(C4=CC
 ```
 
 [test.ipynb](https://github.com/JinYSun/BiBERTa/blob/branch/BiBERTa/test.ipynb):    contain the tutorials to show how to use the model for prediction.
-
-## <u>web server</u> 
-
- The  web server of BiBERTa is available at [Hugging Face Space by jinysun](https://huggingface.co/spaces/jinysun/BiBERTa). Users can also use API to predict the PCE locally as follows:
-
-First, it is supposed to install the client as follows.
-
-```bash
-pip install gradio_client
-```
-
-Then, users can also use API to predict the PCE locally as follows. It should be noted that the Hugging Face Space is must running instead of building or  the read operation will timed out .
-
-```
-from gradio_client import Client
-
-'''
-Predicting by using the SMILES of donor and acceptor
-
-acceptor (str) :Input the SMILES of acceptor 
-donor (str) :Input the SMILES of donor 
-'''
-
-client = Client("jinysun/BiBERTa")
-result = client.predict(
-		acceptor="CCCCCCCCCCCC1=C(/C=C2\C(=O)C3=C(C=C(F)C(F)=C3)C2=C(C#N)C#N)SC2=C1SC1=C2N(CC(CC)CCCC)C2=C1C1=NSN=C1C1=C2N(CC(CC)CCCC)C2=C1SC1=C2SC(/C=C2\C(=O)C3=C(C=C(F)C(F)=C3)C2=C(C#N)C#N)=C1CCCCCCCCCCC",
-		donor="CCCCC(CC)CC1=C(F)C=C(C2=C3C=C(C4=CC=C(C5=C6C(=O)C7=C(CC(CC)CCCC)SC(CC(CC)CCCC)=C7C(=O)C6=C(C6=CC=C(C)S6)S5)S4)SC3=C(C3=CC(F)=C(CC(CC)CCCC)S3)C3=C2SC(C)=C3)S1",
-		api_name="/predict"
-)
-print(result)
-```
-
-```
-from gradio_client import Client, handle_file
-
-'''
-Screening by using the file containing SMILES of donors and acceptors, the size of the file can't be too large.
-
-handle_file: Input the address of file
-'''
-
-client = Client("jinysun/BiBERTa")
-result = client.predict(
-		file_obj=handle_file(r'BiBERTa/Demo/dataset/OSC/test.csv'),
-		api_name="/predict_1"
-)
-print(result)
-```
 
 
 
