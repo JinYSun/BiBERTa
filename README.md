@@ -74,7 +74,9 @@ The [example.ipynb](https://github.com/JinYSun/DeepAcceptor/blob/master/abcBERT/
 
 The ***Discussion*** folder contains the scripts for evaluating the PCE prediction performance.  We compared sevaral methods widely used in molecular property prediction.
 
+## <u>Cite</u>
 
+BiBERTa: a self-supervised framework for accelerating the discovery of stable organic photovoltaic materials(https://doi.org/10.1039/D5TA01529D)
 
 ## <u>Contact</u>
 
